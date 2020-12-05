@@ -1,4 +1,4 @@
-from PySide2.QtCore import QRectF, QPointF
+from PySide2.QtCore import QRectF
 
 from src.gui.items.base_item import BaseItem, BasePoint
 
@@ -20,6 +20,4 @@ class PointItem(BaseItem):
 
     def paint(self, painter, option, widget):
         painter.setPen(self.get_pen())
-        # painter.translate(self.point.x() + 1, self.point.y() + 1)
-        painter.drawLine(self.point, self.point)
-        # painter.drawEllipse(self.point, 2, 2)
+        painter.drawPoint(self.point)

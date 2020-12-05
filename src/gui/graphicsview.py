@@ -1,15 +1,17 @@
-from PySide2.QtCore import QRectF, Qt, QPointF
+from PySide2.QtCore import QRectF, Qt, QPointF, Signal, QSize
 from PySide2.QtGui import QTransform, QBrush, QColor
 from PySide2.QtWidgets import QGraphicsView, QGraphicsScene
 
 from src.gui.items.line_item import LineItem
 from src.gui.items.point_item import PointItem
 from src.gui.items.polyline_item import PolyLineItem
-from src.gui.items.text_item import TextItem
+from src.gui.items.text_item import TextItem, TEXT_ATTACHMENT_POINT
 from src.gui.layer import Layer
 
 
 class GraphicsView(QGraphicsView):
+    mouse_move = Signal(tuple)  # Signal(QPointF) is not working
+
     def __init__(self, parent=None):
         super(GraphicsView, self).__init__(parent)
 
@@ -17,15 +19,8 @@ class GraphicsView(QGraphicsView):
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.setCursor(Qt.CrossCursor)
 
-        # Transforming view's coordinate system
-        #
-        # .-------> x                  ^ y
-        # |                            |
-        # |                            |
-        # |            Transform ==>   |
-        # |                            |
-        # v                            |
-        # y                            .-------> x
+        self.setTransformationAnchor(QGraphicsView.NoAnchor)
+        self.setResizeAnchor(QGraphicsView.NoAnchor)
 
         self.setTransform(QTransform(1, 0, 0, 0, -1, 0, 0, 0, 1))
 
@@ -45,6 +40,12 @@ class GraphicsView(QGraphicsView):
         self.middle_pressed = False
         self.right_pressed = False
         self.drag_pos = None
+
+        self.line_drawing = False
+
+        self.initial_matrix = self.matrix()
+
+        self.setMouseTracking(True)
 
         self.scale_factor = 1.0
 
@@ -67,9 +68,10 @@ class GraphicsView(QGraphicsView):
         layer = self.active_layer if layer == 'active' else self.get_layer_by_name(layer)
         self.add_item(layer=layer, item=PolyLineItem(*points, closed))
 
-    def create_text_item(self, text, position, angle=0, layer='active'):
+    def create_text_item(self, text, position, angle=0, layer='active', attachment_point=1):
         layer = self.active_layer if layer == 'active' else self.get_layer_by_name(layer)
-        self.add_item(layer=layer, item=TextItem(text=text, position=QPointF(*position), angle=angle))
+        self.add_item(layer=layer, item=TextItem(text=text, position=QPointF(*position), angle=angle,
+                                                 attachment_point=TEXT_ATTACHMENT_POINT[attachment_point]))
 
     # <--- Layer Functions --->
 
@@ -128,6 +130,10 @@ class GraphicsView(QGraphicsView):
         return [item for item in self.scene().items() if item.layer.status == 1]
 
     def show_all(self):
+        # trick:
+        # if user zoom in or zoom out too much view exceeds matrix limit
+        # so need to set view's matrix to initial matrix
+        self.setMatrix(self.initial_matrix)
         items = self.get_visible_items()
         rect = QRectF()
         for i in items:
@@ -139,6 +145,7 @@ class GraphicsView(QGraphicsView):
         rect.setWidth(rect.width() + 1)
         rect.setHeight(rect.height() + 1)
         self.fitInView(rect, Qt.KeepAspectRatio)
+        self.scene().update(rect)
 
     # <--- Mouse And Key Events --->
 
@@ -173,10 +180,16 @@ class GraphicsView(QGraphicsView):
             self.middle_pressed = False
         if event.button() == Qt.RightButton:
             self.right_pressed = False
+
+        if self.line_drawing:
+            item = self.items(QRectF(event.pos(), QSize(3, 3)).toRect())
+            print(item)
         super(GraphicsView, self).mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event):
         new_pos = event.pos()
+        scene_pos = self.mapToScene(new_pos)
+        self.mouse_move.emit((scene_pos.x(), scene_pos.y()))
         if self.middle_pressed:
             diff = new_pos - self.drag_pos
             self.drag_pos = new_pos
@@ -191,15 +204,16 @@ class GraphicsView(QGraphicsView):
         in_factor = 1.25
         out_factor = 1 / in_factor
 
-        self.setTransformationAnchor(QGraphicsView.NoAnchor)
-        self.setResizeAnchor(QGraphicsView.NoAnchor)
-
-        old_pos = self.mapToScene(event.pos())
-
         if event.delta() > 0:
             zoom_factor = in_factor
         else:
             zoom_factor = out_factor
+        # a = self.matrix().scale(zoom_factor, zoom_factor).mapRect(QRectF(0, 0, 1, 1)).width()
+        # print(self.matrix())
+        # if a > 750 or a < 0.001:
+        #     return
+
+        old_pos = self.mapToScene(event.pos())
         self.scale(zoom_factor, zoom_factor)
 
         delta = self.mapToScene(event.pos()) - old_pos

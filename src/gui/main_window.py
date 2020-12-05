@@ -1,4 +1,4 @@
-from PySide2.QtWidgets import QMainWindow, QWidget, QVBoxLayout
+from PySide2.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QStatusBar
 
 from src.gui.graphicsview import GraphicsView
 
@@ -11,3 +11,4 @@ class MainWindow(QMainWindow):
         self.graphicsView = GraphicsView(self.widget)
         self.verticalLayout.addWidget(self.graphicsView)
         self.setCentralWidget(self.widget)
+        self.setStatusBar(QStatusBar())
