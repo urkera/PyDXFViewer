@@ -31,8 +31,8 @@ class ApplicationWindow(MainWindow):
         self.graphicsView.create_layer(layer_name, '#0f0')
         for point in points:
             self.graphicsView.create_point_item(name=point[0], coordinates=point[1:])
-            if point[0].startswith('ASF'):
-                self.graphicsView.create_text_item(text=point[0], position=point[1:3], attachment_point='TOP_CENTER')
+            # if point[0].startswith('ASF'):
+            #     self.graphicsView.create_text_item(text=point[0], position=point[1:3], attachment_point='TOP_CENTER')
         # self.graphicsView.create_text_item(text=points[0][0], position=(0, 0), attachment_point='MIDDLE_CENTER')
         # print(self.graphicsView.layers)
         self.graphicsView.show_all()

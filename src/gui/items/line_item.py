@@ -5,13 +5,20 @@ from PySide2.QtGui import QPainter
 from PySide2.QtWidgets import QWidget, QStyleOptionGraphicsItem
 
 from .base_item import BaseItem, BasePoint
+from .point_item import PointItem
 
 
 class LineItem(BaseItem):
     def __init__(self, p1, p2, *args, **kwargs):
         super(LineItem, self).__init__(*args, **kwargs)
-        self.p1 = BasePoint(*p1)
-        self.p2 = BasePoint(*p2)
+        if isinstance(p1, PointItem):
+            self.p1 = p1.point
+        if isinstance(p2, PointItem):
+            self.p2 = p2.point
+        if isinstance(p1, tuple):
+            self.p1 = BasePoint(*p1)
+        if isinstance(p2, tuple):
+            self.p2 = BasePoint(*p2)
         self._line = QLineF(self.p1, self.p2)
 
     def length(self):

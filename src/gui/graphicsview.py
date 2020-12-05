@@ -8,6 +8,8 @@ from src.gui.items.polyline_item import PolyLineItem
 from src.gui.items.text_item import TextItem, TEXT_ATTACHMENT_POINT
 from src.gui.layer import Layer
 
+from src.core.utils import euclidean_dist
+
 
 class GraphicsView(QGraphicsView):
     mouse_move = Signal(tuple)  # Signal(QPointF) is not working
@@ -42,6 +44,7 @@ class GraphicsView(QGraphicsView):
         self.drag_pos = None
 
         self.line_drawing = False
+        self.line_points = []
 
         self.initial_matrix = self.matrix()
 
@@ -182,8 +185,19 @@ class GraphicsView(QGraphicsView):
             self.right_pressed = False
 
         if self.line_drawing:
-            item = self.items(QRectF(event.pos(), QSize(3, 3)).toRect())
-            print(item)
+            items = self.items(QRectF(event.pos(), QSize(100, 100)).toRect())
+            points = list(filter(lambda x: x if isinstance(x, PointItem) else None, items))
+            print('closest points: ', points)
+            if len(points) > 0:
+                scene_pos = self.mapToScene(event.pos())
+                dists = [euclidean_dist(scene_pos, p) for p in points]
+                point = points[dists.index(min(dists))]
+                if point not in self.line_points:
+                    self.line_points.append(point)
+                if len(self.line_points) == 2:
+                    self.create_line_item(self.line_points[0], self.line_points[1])
+                    self.line_points = []
+            print(self.line_points)
         super(GraphicsView, self).mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event):
