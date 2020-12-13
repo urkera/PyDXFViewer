@@ -1,23 +1,18 @@
-from PySide2.QtCore import QRectF
-
-from src.gui.items.base_item import BaseItem, BasePoint
+from src.core.utils import get_point
+from src.gui.items.base_item import BaseItem
 
 
 class PointItem(BaseItem):
     def __init__(self, point, *args, **kwargs):
         super(PointItem, self).__init__(*args, **kwargs)
         self._name = kwargs.pop('name')
-        self.point = BasePoint(*point)
+        self.point = get_point(point)
 
     def __repr__(self):
         return f'Point(\'{self.name}\',[{self.point.x()}, {self.point.y()}, {self.point.z()}])'
 
-    def boundingRect(self):
-        rect = QRectF(self.point, self.point)
-        rect.setWidth(1)
-        rect.setHeight(1)
-        return rect
+    def draw_shape(self, painter_path):
+        painter_path.addRect(self.point.x() - 2, self.point.y() - 2, 4, 4)
 
-    def paint(self, painter, option, widget):
-        painter.setPen(self.get_pen())
+    def draw_item(self, painter, option, widget):
         painter.drawPoint(self.point)

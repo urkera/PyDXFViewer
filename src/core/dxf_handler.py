@@ -7,7 +7,6 @@ class DXFHandler(object):
     def __init__(self, f_name):
         self.doc = ez.readfile(f_name)
         self.model_space = self.doc.modelspace()
-        # print(ez.sections.tables.Table)
 
     def get_layers(self):
         for layer in self.doc.layers:
@@ -18,13 +17,10 @@ class DXFHandler(object):
         return self.doc.layers
 
     def get_texts(self):
-        for text in self.model_space.query('TEXT'):
-            yield text
+        return self.model_space.query('TEXT')
 
     def get_lines(self):
-        for line in self.model_space.query('LINE'):
-            yield line
+        return self.model_space.query('LINE')
 
     def get_p_lines(self):
-        for p_line in self.model_space.query('POLYLINE'):
-            yield p_line
+        return self.model_space.query('POLYLINE')

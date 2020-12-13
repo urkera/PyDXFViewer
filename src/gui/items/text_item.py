@@ -1,7 +1,7 @@
 from PySide2.QtCore import QRectF, QSize, QPointF
 from PySide2.QtGui import QFont, QFontMetrics
 
-from .base_item import BaseItem
+from src.gui.items.base_item import BaseItem
 
 TEXT_ATTACHMENT_POINT = {
     'TOP_LEFT': 1, 'TOP_CENTER': 2, 'TOP_RIGHT': 3,

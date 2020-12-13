@@ -1,20 +1,7 @@
 from uuid import uuid4
 
-from PySide2.QtCore import QPointF
-from PySide2.QtGui import QPen
-from PySide2.QtWidgets import QGraphicsItem
-
-
-class BasePoint(QPointF):
-    def __init__(self, x, y, z=0):
-        super(BasePoint, self).__init__(x, y)
-        self._z = z
-
-    def z(self):
-        return self._z
-
-    def set_z(self, z):
-        self._z = z
+from PySide2.QtGui import QPen, QColor, QPainterPathStroker, QPainterPath, QPainter
+from PySide2.QtWidgets import QGraphicsItem, QStyleOptionGraphicsItem, QWidget
 
 
 class BaseItem(QGraphicsItem):
@@ -24,50 +11,67 @@ class BaseItem(QGraphicsItem):
         self._color = 'layer'
         self._name = uuid4().hex
         self._pen_width = 0.0
+        self.setAcceptHoverEvents(True)
+        self.setFlag(QGraphicsItem.ItemIsSelectable, True)
 
-    def boundingRect(self):
-        """this function must be overridden"""
-        return super(BaseItem, self).boundingRect()
-
-    def paint(self, painter, option, widget):
-        """this function must be overridden"""
-        painter.setPen(self.get_pen())
-        painter.drawLine(self._line)
-
-    @property
-    def name(self):
+    # <-- getters setters and properties -->
+    def get_name(self):
         return self._name
 
-    @name.setter
-    def name(self, name):
+    def set_name(self, name):
         self._name = name
 
-    @property
-    def layer(self):
+    name = property(fget=get_name, fset=set_name)
+
+    def get_layer(self):
         return self._layer
 
-    @layer.setter
-    def layer(self, layer):
+    def set_layer(self, layer):
         self._layer = layer
 
-    @property
-    def color(self):
+    layer = property(fget=get_layer, fset=set_layer)
+
+    def get_color(self):
+        if self._color == 'layer':
+            self._color = self.layer.color
         return self._color
 
-    @color.setter
-    def color(self, color):
-        self._color = color
+    def set_color(self, value):
+        if value == 'layer':
+            self._color = self.layer.color
+        else:
+            self._color = QColor(*value)
 
-    @property
-    def pen_width(self):
+    color = property(fget=get_color, fset=set_color)
+
+    def get_pen_width(self):
         return self._pen_width
 
-    @pen_width.setter
-    def pen_width(self, pen_width):
+    def set_pen_width(self, pen_width):
         self._pen_width = pen_width
+
+    pen_width = property(fget=get_pen_width, fset=set_pen_width)
 
     def get_pen(self):
         pen = QPen()
-        pen.setColor(self.layer.color if self.color == 'layer' else self._color)
-        pen.setWidthF(self._pen_width)
+        pen.setColor(self.color)
+        pen.setWidthF(self.pen_width)
         return pen
+
+    def draw_shape(self, painter_path):
+        pass
+
+    def shape(self):
+        ps = QPainterPathStroker()
+        path = QPainterPath()
+        self.draw_shape(path)
+        ps.setWidth(self.pen_width)
+        return ps.createStroke(path)
+
+    def boundingRect(self):
+        return self.shape().boundingRect()
+
+    def paint(self, painter=QPainter, option=QStyleOptionGraphicsItem, widget=QWidget):
+        painter.setPen(self.get_pen())
+        painter.setClipRect(option.exposedRect)
+        self.draw_item(painter, option, widget)
